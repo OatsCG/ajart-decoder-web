@@ -80,7 +80,6 @@
 
     label {
       display: block;
-      margin-bottom: 8px;
       font-weight: 700;
       font-size: 14px;
     }
@@ -194,6 +193,125 @@
       font-family: Consolas, Monaco, monospace;
       font-size: 13px;
     }
+
+    .label-with-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-button {
+      appearance: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font: inherit;
+      font-size: 14px;
+      color: #9ca3af;
+      transition: color 0.2s;
+    }
+
+    .info-button:hover {
+      color: #5b6472;
+    }
+
+    .info-button:focus {
+      outline: 2px solid #9ec5fe;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      padding: 24px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .modal-close-button {
+      appearance: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: #5b6472;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .modal-close-button:hover {
+      color: #1f2937;
+    }
+
+    .modal-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+
+    .modal-image-container {
+      margin: 20px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #d8dee6;
+    }
+
+    .modal-image-container img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .modal-image-subtitle {
+      font-size: 13px;
+      color: #5b6472;
+      margin-top: 8px;
+      text-align: center;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -220,7 +338,10 @@
         </div>
 
         <div class="field">
-          <label for="decodeUuidInput">UUID</label>
+          <div class="label-with-button">
+            <label for="decodeUuidInput">UUID</label>
+            <button id="decodeUuidInfoButton" class="info-button" type="button">How to find my UUID</button>
+          </div>
           <input
             id="decodeUuidInput"
             type="text"
@@ -260,7 +381,10 @@
         </div>
 
         <div class="field">
-          <label for="encodeUuidInput">UUID</label>
+          <div class="label-with-button">
+            <label for="encodeUuidInput">UUID</label>
+            <button id="encodeUuidInfoButton" class="info-button" type="button">How to find my UUID</button>
+          </div>
           <input
             id="encodeUuidInput"
             type="text"
@@ -287,6 +411,22 @@
           </div>
         </section>
       </section>
+    </div>
+  </div>
+
+  <div id="uuidInfoModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">How to find my UUID</h2>
+        <button id="modalCloseButton" class="modal-close-button" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>To find your UUID, you need to locate it in your application or service configuration.</p>
+      </div>
+      <div class="modal-image-container">
+        <img id="uuidInfoImage" src="info.png" alt="UUID example" />
+        <div class="modal-image-subtitle">UUID example in Proxyman</div>
+      </div>
     </div>
   </div>
 

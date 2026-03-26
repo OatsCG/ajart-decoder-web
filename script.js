@@ -54,6 +54,11 @@ const encodePreviewImage = document.getElementById("encodePreviewImage");
 const encodeDownloadButton = document.getElementById("encodeDownloadButton");
 const encodeDownloadAmfButton = document.getElementById("encodeDownloadAmfButton");
 
+const uuidInfoModal = document.getElementById("uuidInfoModal");
+const decodeUuidInfoButton = document.getElementById("decodeUuidInfoButton");
+const encodeUuidInfoButton = document.getElementById("encodeUuidInfoButton");
+const modalCloseButton = document.getElementById("modalCloseButton");
+
 let decodeObjectUrl = null;
 let decodeAmfObjectUrl = null;
 let encodePreviewObjectUrl = null;
@@ -71,6 +76,24 @@ function showTab(tabName) {
 
 decoderTabButton.addEventListener("click", () => showTab("decoder"));
 encoderTabButton.addEventListener("click", () => showTab("encoder"));
+
+function openUuidInfoModal() {
+  uuidInfoModal.classList.add("active");
+}
+
+function closeUuidInfoModal() {
+  uuidInfoModal.classList.remove("active");
+}
+
+decodeUuidInfoButton.addEventListener("click", openUuidInfoModal);
+encodeUuidInfoButton.addEventListener("click", openUuidInfoModal);
+modalCloseButton.addEventListener("click", closeUuidInfoModal);
+
+uuidInfoModal.addEventListener("click", (event) => {
+  if (event.target === uuidInfoModal) {
+    closeUuidInfoModal();
+  }
+});
 
 function setStatus(element, message, type) {
   element.textContent = message;
