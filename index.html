@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AJART to PNG Converter</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 18px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #d8dee6;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      color: #5b6472;
+      line-height: 1.45;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #c9d2dc;
+      border-radius: 10px;
+      background: #fff;
+      font: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="file"]:focus,
+    button:focus,
+    a:focus {
+      outline: 2px solid #9ec5fe;
+      outline-offset: 2px;
+    }
+
+    .actions {
+      margin-top: 20px;
+    }
+
+    button,
+    .button-link {
+      display: inline-block;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      background: #1f2937;
+      color: #ffffff;
+      padding: 11px 16px;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button:hover,
+    .button-link:hover {
+      background: #111827;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+      border: 1px solid transparent;
+    }
+
+    .status.info {
+      background: #eef4ff;
+      border-color: #c9dcff;
+      color: #23406e;
+    }
+
+    .status.success {
+      background: #edf9f0;
+      border-color: #bfe4c8;
+      color: #1d5a2f;
+    }
+
+    .status.error {
+      background: #fff1f1;
+      border-color: #f2c5c5;
+      color: #8a1f1f;
+    }
+
+    .preview {
+      margin-top: 26px;
+      padding-top: 22px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .preview h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .image-frame {
+      background: #fafafa;
+      border: 1px solid #d8dee6;
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    #previewImage {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    .download-row {
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>AJART to PNG Converter</h1>
+      <p class="subtitle">
+        Pick a local .ajart file, enter its UUID, and decode the PNG in your browser.
+      </p>
+
+      <div class="field">
+        <label for="fileInput">AJART file</label>
+        <input id="fileInput" type="file" accept=".ajart,.bin,application/octet-stream" />
+      </div>
+
+      <div class="field">
+        <label for="uuidInput">UUID</label>
+        <input
+          id="uuidInput"
+          type="text"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          spellcheck="false"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="actions">
+        <button id="decodeButton" type="button">Decode PNG</button>
+      </div>
+
+      <div id="status" class="status info">Ready.</div>
+
+      <section id="previewSection" class="preview" hidden>
+        <h2>Decoded PNG</h2>
+        <div class="image-frame">
+          <img id="previewImage" alt="Decoded PNG preview" />
+        </div>
+        <div class="download-row">
+          <a id="downloadButton" class="button-link" download="decoded.png">Download PNG</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
