@@ -31,30 +31,70 @@ const INV_SBOX = (() => {
 
 const RCON = [0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
 
-const fileInput = document.getElementById("fileInput");
-const uuidInput = document.getElementById("uuidInput");
+const decoderTabButton = document.getElementById("decoderTabButton");
+const encoderTabButton = document.getElementById("encoderTabButton");
+const decoderPanel = document.getElementById("decoderPanel");
+const encoderPanel = document.getElementById("encoderPanel");
+
+const decodeFileInput = document.getElementById("decodeFileInput");
+const decodeUuidInput = document.getElementById("decodeUuidInput");
 const decodeButton = document.getElementById("decodeButton");
-const statusBox = document.getElementById("status");
-const previewSection = document.getElementById("previewSection");
-const previewImage = document.getElementById("previewImage");
-const downloadButton = document.getElementById("downloadButton");
+const decodeStatus = document.getElementById("decodeStatus");
+const decodePreviewSection = document.getElementById("decodePreviewSection");
+const decodePreviewImage = document.getElementById("decodePreviewImage");
+const decodeDownloadButton = document.getElementById("decodeDownloadButton");
 
-let currentObjectUrl = null;
+const encodeFileInput = document.getElementById("encodeFileInput");
+const encodeUuidInput = document.getElementById("encodeUuidInput");
+const encodeButton = document.getElementById("encodeButton");
+const encodeStatus = document.getElementById("encodeStatus");
+const encodePreviewSection = document.getElementById("encodePreviewSection");
+const encodePreviewImage = document.getElementById("encodePreviewImage");
+const encodeDownloadButton = document.getElementById("encodeDownloadButton");
 
-function setStatus(message, type) {
-  statusBox.textContent = message;
-  statusBox.className = "status " + (type || "info");
+let decodeObjectUrl = null;
+let encodePreviewObjectUrl = null;
+let encodeDownloadObjectUrl = null;
+
+function showTab(tabName) {
+  const isDecoder = tabName === "decoder";
+
+  decoderTabButton.classList.toggle("active", isDecoder);
+  encoderTabButton.classList.toggle("active", !isDecoder);
+  decoderPanel.hidden = !isDecoder;
+  encoderPanel.hidden = isDecoder;
 }
 
-function clearPreview() {
-  previewSection.hidden = true;
-  previewImage.removeAttribute("src");
-  downloadButton.removeAttribute("href");
+decoderTabButton.addEventListener("click", () => showTab("decoder"));
+encoderTabButton.addEventListener("click", () => showTab("encoder"));
 
-  if (currentObjectUrl) {
-    URL.revokeObjectURL(currentObjectUrl);
-    currentObjectUrl = null;
+function setStatus(element, message, type) {
+  element.textContent = message;
+  element.className = "status " + (type || "info");
+}
+
+function revokeObjectUrl(url) {
+  if (url) {
+    URL.revokeObjectURL(url);
   }
+}
+
+function clearDecodePreview() {
+  decodePreviewSection.hidden = true;
+  decodePreviewImage.removeAttribute("src");
+  decodeDownloadButton.removeAttribute("href");
+  revokeObjectUrl(decodeObjectUrl);
+  decodeObjectUrl = null;
+}
+
+function clearEncodePreview() {
+  encodePreviewSection.hidden = true;
+  encodePreviewImage.removeAttribute("src");
+  encodeDownloadButton.removeAttribute("href");
+  revokeObjectUrl(encodePreviewObjectUrl);
+  revokeObjectUrl(encodeDownloadObjectUrl);
+  encodePreviewObjectUrl = null;
+  encodeDownloadObjectUrl = null;
 }
 
 function parseUuid(uuidString) {
@@ -162,10 +202,37 @@ function addRoundKey(state, roundKey) {
   }
 }
 
+function subBytes(state) {
+  for (let i = 0; i < 16; i += 1) {
+    state[i] = SBOX[state[i]];
+  }
+}
+
 function invSubBytes(state) {
   for (let i = 0; i < 16; i += 1) {
     state[i] = INV_SBOX[state[i]];
   }
+}
+
+function shiftRows(state) {
+  let temp = state[1];
+  state[1] = state[5];
+  state[5] = state[9];
+  state[9] = state[13];
+  state[13] = temp;
+
+  temp = state[2];
+  const temp2 = state[6];
+  state[2] = state[10];
+  state[6] = state[14];
+  state[10] = temp;
+  state[14] = temp2;
+
+  temp = state[3];
+  state[3] = state[15];
+  state[15] = state[11];
+  state[11] = state[7];
+  state[7] = temp;
 }
 
 function invShiftRows(state) {
@@ -189,6 +256,21 @@ function invShiftRows(state) {
   state[15] = temp;
 }
 
+function mixColumns(state) {
+  for (let column = 0; column < 4; column += 1) {
+    const i = column * 4;
+    const a0 = state[i + 0];
+    const a1 = state[i + 1];
+    const a2 = state[i + 2];
+    const a3 = state[i + 3];
+
+    state[i + 0] = gfMul(a0, 2) ^ gfMul(a1, 3) ^ a2 ^ a3;
+    state[i + 1] = a0 ^ gfMul(a1, 2) ^ gfMul(a2, 3) ^ a3;
+    state[i + 2] = a0 ^ a1 ^ gfMul(a2, 2) ^ gfMul(a3, 3);
+    state[i + 3] = gfMul(a0, 3) ^ a1 ^ a2 ^ gfMul(a3, 2);
+  }
+}
+
 function invMixColumns(state) {
   for (let column = 0; column < 4; column += 1) {
     const i = column * 4;
@@ -202,6 +284,28 @@ function invMixColumns(state) {
     state[i + 2] = gfMul(a0, 13) ^ gfMul(a1, 9) ^ gfMul(a2, 14) ^ gfMul(a3, 11);
     state[i + 3] = gfMul(a0, 11) ^ gfMul(a1, 13) ^ gfMul(a2, 9) ^ gfMul(a3, 14);
   }
+}
+
+function aes128EncryptBlock(block, roundKeys) {
+  if (block.length !== 16) {
+    throw new Error("AES block must be exactly 16 bytes.");
+  }
+
+  const state = Array.from(block);
+  addRoundKey(state, roundKeys[0]);
+
+  for (let round = 1; round < 10; round += 1) {
+    subBytes(state);
+    shiftRows(state);
+    mixColumns(state);
+    addRoundKey(state, roundKeys[round]);
+  }
+
+  subBytes(state);
+  shiftRows(state);
+  addRoundKey(state, roundKeys[10]);
+
+  return new Uint8Array(state);
 }
 
 function aes128DecryptBlock(block, roundKeys) {
@@ -224,6 +328,46 @@ function aes128DecryptBlock(block, roundKeys) {
   addRoundKey(state, roundKeys[0]);
 
   return new Uint8Array(state);
+}
+
+function padToBlockSize(data, blockSize) {
+  const remainder = data.length % blockSize;
+  if (remainder === 0) {
+    return data;
+  }
+
+  const padded = new Uint8Array(data.length + (blockSize - remainder));
+  padded.set(data, 0);
+  return padded;
+}
+
+function encryptAesCbc(key, iv, plaintext) {
+  if (key.length !== 16) {
+    throw new Error("AES-128 key must be 16 bytes.");
+  }
+  if (iv.length !== 16) {
+    throw new Error("AES CBC IV must be 16 bytes.");
+  }
+
+  const paddedPlaintext = padToBlockSize(plaintext, 16);
+  const roundKeys = expandKey128(key);
+  const ciphertext = new Uint8Array(paddedPlaintext.length);
+  let previousBlock = iv;
+
+  for (let offset = 0; offset < paddedPlaintext.length; offset += 16) {
+    const block = paddedPlaintext.slice(offset, offset + 16);
+    const xored = new Uint8Array(16);
+
+    for (let i = 0; i < 16; i += 1) {
+      xored[i] = block[i] ^ previousBlock[i];
+    }
+
+    const encryptedBlock = aes128EncryptBlock(xored, roundKeys);
+    ciphertext.set(encryptedBlock, offset);
+    previousBlock = encryptedBlock;
+  }
+
+  return ciphertext;
 }
 
 function decryptAesCbc(key, iv, ciphertext) {
@@ -308,11 +452,17 @@ async function decompressZlib(data) {
   throw new Error("zlib decompression failed. " + errors.join(" | "));
 }
 
-function extractPngFromAmf3(data) {
-  if (data.length < 1 || data[0] !== 0x0A) {
-    return data;
+async function compressZlib(data) {
+  if (typeof CompressionStream === "undefined") {
+    throw new Error("This browser does not support CompressionStream.");
   }
 
+  const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("deflate"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
+function findPngStart(data) {
   for (let start = 0; start <= data.length - PNG_SIGNATURE.length; start += 1) {
     let match = true;
 
@@ -324,11 +474,130 @@ function extractPngFromAmf3(data) {
     }
 
     if (match) {
-      return data.slice(start);
+      return start;
     }
   }
 
+  return -1;
+}
+
+function extractPngFromAmf3(data) {
+  if (data.length < 1 || data[0] !== 0x0A) {
+    return data;
+  }
+
+  const pngStart = findPngStart(data);
+  if (pngStart !== -1) {
+    return data.slice(pngStart);
+  }
+
   return data;
+}
+
+function concatBytes(parts) {
+  let totalLength = 0;
+  for (const part of parts) {
+    totalLength += part.length;
+  }
+
+  const out = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+
+  return out;
+}
+
+function asciiBytes(text) {
+  const bytes = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i += 1) {
+    bytes[i] = text.charCodeAt(i) & 0xFF;
+  }
+  return bytes;
+}
+
+function utf8Bytes(text) {
+  return new TextEncoder().encode(text);
+}
+
+function encodeU29(value) {
+  if (value < 0 || value > 0x1FFFFFFF) {
+    throw new Error("AMF3 U29 value out of range.");
+  }
+
+  if (value < 0x80) {
+    return new Uint8Array([value]);
+  }
+
+  if (value < 0x4000) {
+    return new Uint8Array([
+      ((value >> 7) & 0x7F) | 0x80,
+      value & 0x7F
+    ]);
+  }
+
+  if (value < 0x200000) {
+    return new Uint8Array([
+      ((value >> 14) & 0x7F) | 0x80,
+      ((value >> 7) & 0x7F) | 0x80,
+      value & 0x7F
+    ]);
+  }
+
+  return new Uint8Array([
+    ((value >> 22) & 0x7F) | 0x80,
+    ((value >> 15) & 0x7F) | 0x80,
+    ((value >> 8) & 0x7F) | 0x80,
+    value & 0xFF
+  ]);
+}
+
+function amf3StringNoMarker(text) {
+  if (text.length === 0) {
+    return new Uint8Array([0x01]);
+  }
+
+  const bytes = utf8Bytes(text);
+  const header = encodeU29((bytes.length << 1) | 1);
+  return concatBytes([header, bytes]);
+}
+
+function amf3StringValue(text) {
+  return concatBytes([
+    new Uint8Array([0x06]),
+    amf3StringNoMarker(text)
+  ]);
+}
+
+function amf3ByteArrayValue(bytes) {
+  const header = encodeU29((bytes.length << 1) | 1);
+  return concatBytes([
+    new Uint8Array([0x0C]),
+    header,
+    bytes
+  ]);
+}
+
+function buildAjartAmf3(uuidString, pngBytes) {
+  return concatBytes([
+    new Uint8Array([0x0A]),      // object marker
+    new Uint8Array([0x0B]),      // inline object, inline traits, dynamic, 0 sealed members
+    new Uint8Array([0x01]),      // empty class name
+
+    amf3StringNoMarker("h"),
+    amf3StringValue("ajg1id"),
+
+    amf3StringNoMarker("p"),
+    amf3StringValue(uuidString),
+
+    amf3StringNoMarker("b"),
+    amf3ByteArrayValue(pngBytes),
+
+    new Uint8Array([0x01])       // end of dynamic members
+  ]);
 }
 
 async function decodeAjart(file, uuidString) {
@@ -339,43 +608,113 @@ async function decodeAjart(file, uuidString) {
   return extractPngFromAmf3(decompressedBytes);
 }
 
-async function handleDecode() {
-  clearPreview();
+async function encodeAjart(file, uuidString) {
+  const trimmedUuid = uuidString.trim();
+  const { key, iv } = parseUuid(trimmedUuid);
+  const pngBytes = new Uint8Array(await file.arrayBuffer());
 
-  const file = fileInput.files[0];
-  const uuid = uuidInput.value;
+  const pngStart = findPngStart(pngBytes);
+  if (pngStart !== 0) {
+    throw new Error("Selected file does not look like a PNG.");
+  }
+
+  const amf3Bytes = buildAjartAmf3(trimmedUuid, pngBytes);
+  const compressedBytes = await compressZlib(amf3Bytes);
+  const encryptedBytes = encryptAesCbc(key, iv, compressedBytes);
+
+  return {
+    ajartBytes: encryptedBytes,
+    pngBytes: pngBytes
+  };
+}
+
+async function handleDecode() {
+  clearDecodePreview();
+
+  const file = decodeFileInput.files[0];
+  const uuid = decodeUuidInput.value;
 
   if (!file) {
-    setStatus("Choose an .ajart file first.", "error");
+    setStatus(decodeStatus, "Choose an .ajart file first.", "error");
     return;
   }
 
   if (!uuid.trim()) {
-    setStatus("Enter a UUID first.", "error");
+    setStatus(decodeStatus, "Enter a UUID first.", "error");
     return;
   }
 
   try {
-    setStatus("Decoding…", "info");
+    setStatus(decodeStatus, "Decoding…", "info");
 
     const pngBytes = await decodeAjart(file, uuid);
     const blob = new Blob([pngBytes], { type: "image/png" });
 
-    currentObjectUrl = URL.createObjectURL(blob);
-    previewImage.src = currentObjectUrl;
-    downloadButton.href = currentObjectUrl;
-    previewSection.hidden = false;
+    decodeObjectUrl = URL.createObjectURL(blob);
+    decodePreviewImage.src = decodeObjectUrl;
+    decodeDownloadButton.href = decodeObjectUrl;
+    decodePreviewSection.hidden = false;
 
-    setStatus("Decoded successfully.", "success");
+    setStatus(decodeStatus, "Decoded successfully.", "success");
   } catch (error) {
     console.error(error);
-    setStatus("Error: " + error.message, "error");
+    setStatus(decodeStatus, "Error: " + error.message, "error");
+  }
+}
+
+async function handleEncode() {
+  clearEncodePreview();
+
+  const file = encodeFileInput.files[0];
+  const uuid = encodeUuidInput.value;
+
+  if (!file) {
+    setStatus(encodeStatus, "Choose a PNG file first.", "error");
+    return;
+  }
+
+  if (!uuid.trim()) {
+    setStatus(encodeStatus, "Enter a UUID first.", "error");
+    return;
+  }
+
+  try {
+    setStatus(encodeStatus, "Encoding…", "info");
+
+    const result = await encodeAjart(file, uuid);
+
+    encodePreviewObjectUrl = URL.createObjectURL(
+      new Blob([result.pngBytes], { type: "image/png" })
+    );
+    encodeDownloadObjectUrl = URL.createObjectURL(
+      new Blob([result.ajartBytes], { type: "application/octet-stream" })
+    );
+
+    encodePreviewImage.src = encodePreviewObjectUrl;
+    encodeDownloadButton.href = encodeDownloadObjectUrl;
+    encodePreviewSection.hidden = false;
+
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "encoded";
+    encodeDownloadButton.download = baseName + ".ajart";
+
+    setStatus(encodeStatus, "Encoded successfully.", "success");
+  } catch (error) {
+    console.error(error);
+    setStatus(encodeStatus, "Error: " + error.message, "error");
   }
 }
 
 decodeButton.addEventListener("click", handleDecode);
-uuidInput.addEventListener("keydown", (event) => {
+encodeButton.addEventListener("click", handleEncode);
+
+decodeUuidInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     handleDecode();
+  }
+});
+
+encodeUuidInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    handleEncode();
   }
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AJART to PNG Converter</title>
+  <title>AJART PNG Tool</title>
   <style>
     :root {
       color-scheme: light;
@@ -21,7 +21,7 @@
     }
 
     .wrap {
-      max-width: 760px;
+      max-width: 820px;
       margin: 40px auto;
       padding: 0 18px;
     }
@@ -43,6 +43,35 @@
       margin: 0 0 22px;
       color: #5b6472;
       line-height: 1.45;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      appearance: none;
+      border: 1px solid #c9d2dc;
+      border-radius: 10px;
+      background: #eef2f6;
+      color: #1f2937;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background: #1f2937;
+      color: #ffffff;
+      border-color: #1f2937;
+    }
+
+    .panel[hidden] {
+      display: none !important;
     }
 
     .field {
@@ -78,7 +107,7 @@
       margin-top: 20px;
     }
 
-    button,
+    button.primary,
     .button-link {
       display: inline-block;
       border: 1px solid #1f2937;
@@ -92,7 +121,7 @@
       cursor: pointer;
     }
 
-    button:hover,
+    button.primary:hover,
     .button-link:hover {
       background: #111827;
     }
@@ -143,7 +172,7 @@
       overflow: auto;
     }
 
-    #previewImage {
+    .image-frame img {
       display: block;
       max-width: 100%;
       height: auto;
@@ -153,46 +182,108 @@
     .download-row {
       margin-top: 14px;
     }
+
+    .helper {
+      margin: 0 0 18px;
+      font-size: 14px;
+      color: #5b6472;
+      line-height: 1.45;
+    }
+
+    .mono {
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>AJART to PNG Converter</h1>
+      <h1>AJART PNG Tool</h1>
       <p class="subtitle">
-        Pick a local .ajart file, enter its UUID, and decode the PNG in your browser.
+        Decode AJART files to PNG, or encode a PNG back into an AJART file.
       </p>
 
-      <div class="field">
-        <label for="fileInput">AJART file</label>
-        <input id="fileInput" type="file" accept=".ajart,.bin,application/octet-stream" />
+      <div class="tabs">
+        <button id="decoderTabButton" class="tab-button active" type="button">Decoder</button>
+        <button id="encoderTabButton" class="tab-button" type="button">Encoder</button>
       </div>
 
-      <div class="field">
-        <label for="uuidInput">UUID</label>
-        <input
-          id="uuidInput"
-          type="text"
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          spellcheck="false"
-          autocomplete="off"
-        />
-      </div>
+      <section id="decoderPanel" class="panel">
+        <p class="helper">
+          Pick a local <span class="mono">.ajart</span> file, enter its UUID, and decode the PNG in your browser.
+        </p>
 
-      <div class="actions">
-        <button id="decodeButton" type="button">Decode PNG</button>
-      </div>
-
-      <div id="status" class="status info">Ready.</div>
-
-      <section id="previewSection" class="preview" hidden>
-        <h2>Decoded PNG</h2>
-        <div class="image-frame">
-          <img id="previewImage" alt="Decoded PNG preview" />
+        <div class="field">
+          <label for="decodeFileInput">AJART file</label>
+          <input id="decodeFileInput" type="file" accept=".ajart,.bin,application/octet-stream" />
         </div>
-        <div class="download-row">
-          <a id="downloadButton" class="button-link" download="decoded.png">Download PNG</a>
+
+        <div class="field">
+          <label for="decodeUuidInput">UUID</label>
+          <input
+            id="decodeUuidInput"
+            type="text"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            spellcheck="false"
+            autocomplete="off"
+          />
         </div>
+
+        <div class="actions">
+          <button id="decodeButton" class="primary" type="button">Decode PNG</button>
+        </div>
+
+        <div id="decodeStatus" class="status info">Ready.</div>
+
+        <section id="decodePreviewSection" class="preview" hidden>
+          <h2>Decoded PNG</h2>
+          <div class="image-frame">
+            <img id="decodePreviewImage" alt="Decoded PNG preview" />
+          </div>
+          <div class="download-row">
+            <a id="decodeDownloadButton" class="button-link" download="decoded.png">Download PNG</a>
+          </div>
+        </section>
+      </section>
+
+      <section id="encoderPanel" class="panel" hidden>
+        <p class="helper">
+          Pick a PNG, enter its UUID, and encode it into an AJART file with AMF keys
+          <span class="mono">h</span>, <span class="mono">p</span>, and <span class="mono">b</span>.
+        </p>
+
+        <div class="field">
+          <label for="encodeFileInput">PNG file</label>
+          <input id="encodeFileInput" type="file" accept=".png,image/png" />
+        </div>
+
+        <div class="field">
+          <label for="encodeUuidInput">UUID</label>
+          <input
+            id="encodeUuidInput"
+            type="text"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="actions">
+          <button id="encodeButton" class="primary" type="button">Encode AJART</button>
+        </div>
+
+        <div id="encodeStatus" class="status info">Ready.</div>
+
+        <section id="encodePreviewSection" class="preview" hidden>
+          <h2>Source PNG</h2>
+          <div class="image-frame">
+            <img id="encodePreviewImage" alt="Source PNG preview" />
+          </div>
+          <div class="download-row">
+            <a id="encodeDownloadButton" class="button-link" download="encoded.ajart">Download AJART</a>
+          </div>
+        </section>
       </section>
     </div>
   </div>
