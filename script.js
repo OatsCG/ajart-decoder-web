@@ -43,6 +43,7 @@ const decodeStatus = document.getElementById("decodeStatus");
 const decodePreviewSection = document.getElementById("decodePreviewSection");
 const decodePreviewImage = document.getElementById("decodePreviewImage");
 const decodeDownloadButton = document.getElementById("decodeDownloadButton");
+const decodeDownloadAmfButton = document.getElementById("decodeDownloadAmfButton");
 
 const encodeFileInput = document.getElementById("encodeFileInput");
 const encodeUuidInput = document.getElementById("encodeUuidInput");
@@ -51,10 +52,13 @@ const encodeStatus = document.getElementById("encodeStatus");
 const encodePreviewSection = document.getElementById("encodePreviewSection");
 const encodePreviewImage = document.getElementById("encodePreviewImage");
 const encodeDownloadButton = document.getElementById("encodeDownloadButton");
+const encodeDownloadAmfButton = document.getElementById("encodeDownloadAmfButton");
 
 let decodeObjectUrl = null;
+let decodeAmfObjectUrl = null;
 let encodePreviewObjectUrl = null;
 let encodeDownloadObjectUrl = null;
+let encodeAmfObjectUrl = null;
 
 function showTab(tabName) {
   const isDecoder = tabName === "decoder";
@@ -83,18 +87,24 @@ function clearDecodePreview() {
   decodePreviewSection.hidden = true;
   decodePreviewImage.removeAttribute("src");
   decodeDownloadButton.removeAttribute("href");
+  decodeDownloadAmfButton.removeAttribute("href");
   revokeObjectUrl(decodeObjectUrl);
+  revokeObjectUrl(decodeAmfObjectUrl);
   decodeObjectUrl = null;
+  decodeAmfObjectUrl = null;
 }
 
 function clearEncodePreview() {
   encodePreviewSection.hidden = true;
   encodePreviewImage.removeAttribute("src");
   encodeDownloadButton.removeAttribute("href");
+  encodeDownloadAmfButton.removeAttribute("href");
   revokeObjectUrl(encodePreviewObjectUrl);
   revokeObjectUrl(encodeDownloadObjectUrl);
+  revokeObjectUrl(encodeAmfObjectUrl);
   encodePreviewObjectUrl = null;
   encodeDownloadObjectUrl = null;
+  encodeAmfObjectUrl = null;
 }
 
 function parseUuid(uuidString) {
@@ -588,7 +598,7 @@ function buildAjartAmf3(uuidString, pngBytes) {
     new Uint8Array([0x01]),      // empty class name
 
     amf3StringNoMarker("h"),
-    amf3StringValue("ajg1id"),
+    amf3StringValue("aja2id"),
 
     amf3StringNoMarker("p"),
     amf3StringValue(uuidString),
@@ -605,7 +615,11 @@ async function decodeAjart(file, uuidString) {
   const encryptedBytes = new Uint8Array(await file.arrayBuffer());
   const decryptedBytes = decryptAesCbc(key, iv, encryptedBytes);
   const decompressedBytes = await decompressZlib(decryptedBytes);
-  return extractPngFromAmf3(decompressedBytes);
+  const pngBytes = extractPngFromAmf3(decompressedBytes);
+  return {
+    pngBytes,
+    amfBytes: decompressedBytes
+  };
 }
 
 async function encodeAjart(file, uuidString) {
@@ -624,7 +638,8 @@ async function encodeAjart(file, uuidString) {
 
   return {
     ajartBytes: encryptedBytes,
-    pngBytes: pngBytes
+    pngBytes: pngBytes,
+    amfBytes: amf3Bytes
   };
 }
 
@@ -647,12 +662,20 @@ async function handleDecode() {
   try {
     setStatus(decodeStatus, "Decoding…", "info");
 
-    const pngBytes = await decodeAjart(file, uuid);
+    const result = await decodeAjart(file, uuid);
+    const pngBytes = result.pngBytes;
+    const amfBytes = result.amfBytes;
+
     const blob = new Blob([pngBytes], { type: "image/png" });
+    const amfBlob = new Blob([amfBytes], { type: "application/octet-stream" });
 
     decodeObjectUrl = URL.createObjectURL(blob);
+    decodeAmfObjectUrl = URL.createObjectURL(amfBlob);
+
     decodePreviewImage.src = decodeObjectUrl;
     decodeDownloadButton.href = decodeObjectUrl;
+    decodeDownloadAmfButton.href = decodeAmfObjectUrl;
+    decodeDownloadAmfButton.download = "decoded.amf";
     decodePreviewSection.hidden = false;
 
     setStatus(decodeStatus, "Decoded successfully.", "success");
@@ -689,13 +712,18 @@ async function handleEncode() {
     encodeDownloadObjectUrl = URL.createObjectURL(
       new Blob([result.ajartBytes], { type: "application/octet-stream" })
     );
+    encodeAmfObjectUrl = URL.createObjectURL(
+      new Blob([result.amfBytes], { type: "application/octet-stream" })
+    );
 
     encodePreviewImage.src = encodePreviewObjectUrl;
     encodeDownloadButton.href = encodeDownloadObjectUrl;
+    encodeDownloadAmfButton.href = encodeAmfObjectUrl;
     encodePreviewSection.hidden = false;
 
     const baseName = file.name.replace(/\.[^.]+$/, "") || "encoded";
     encodeDownloadButton.download = baseName + ".ajart";
+    encodeDownloadAmfButton.download = baseName + ".amf";
 
     setStatus(encodeStatus, "Encoded successfully.", "success");
   } catch (error) {
