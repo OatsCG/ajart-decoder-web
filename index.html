@@ -352,7 +352,9 @@
     <div class="card">
       <h1>AJART PNG Tool</h1>
       <p class="subtitle">
-        Decode AJART files to PNG, or encode a PNG back into an AJART file.
+        Decode and encode Animal Jam ajart files.
+        <br>
+        Convert ajart to png, or png to ajart. For info, go to <a href="https://github.com/OatsCG/ajart-decoder-web">https://github.com/OatsCG/ajart-decoder-web</a>.
       </p>
 
       <div class="tabs">
@@ -362,7 +364,7 @@
 
       <section id="decoderPanel" class="panel">
         <p class="helper">
-          Pick a local <span class="mono">.ajart</span> file, enter its UUID, and decode the PNG in your browser.
+          Pick a local <span class="mono">.ajart</span> file, and enter your UUID.
         </p>
 
         <div class="field">
@@ -373,7 +375,7 @@
         <div class="field">
           <div class="label-with-button">
             <label for="decodeUuidInput">UUID</label>
-            <button id="decodeUuidInfoButton" class="info-button" type="button">How to find my UUID</button>
+            <button id="decodeUuidInfoButton" class="info-button" type="button">How to find your UUID</button>
           </div>
           <input
             id="decodeUuidInput"
@@ -385,7 +387,7 @@
         </div>
 
         <div class="actions">
-          <button id="decodeButton" class="primary" type="button">Decode PNG</button>
+          <button id="decodeButton" class="primary" type="button">Decode to PNG</button>
         </div>
 
         <div id="decodeStatus" class="status info">Ready.</div>
@@ -404,8 +406,7 @@
 
       <section id="encoderPanel" class="panel" hidden>
         <p class="helper">
-          Pick a PNG, enter its UUID, and encode it into an AJART file with AMF keys
-          <span class="mono">h</span>, <span class="mono">p</span>, and <span class="mono">b</span>.
+          Pick a PNG, and enter your UUID.
         </p>
 
         <div class="field">
@@ -416,7 +417,7 @@
         <div class="field">
           <div class="label-with-button">
             <label for="encodeUuidInput">UUID</label>
-            <button id="encodeUuidInfoButton" class="info-button" type="button">How to find my UUID</button>
+            <button id="encodeUuidInfoButton" class="info-button" type="button">How to find your UUID</button>
           </div>
           <input
             id="encodeUuidInput"
@@ -428,7 +429,7 @@
         </div>
 
         <div class="actions">
-          <button id="encodeButton" class="primary" type="button">Encode AJART</button>
+          <button id="encodeButton" class="primary" type="button">Encode to AJART</button>
         </div>
 
         <div id="encodeStatus" class="status info">Ready.</div>
@@ -450,7 +451,7 @@
   <div id="uuidInfoModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">How to find my UUID</h2>
+        <h2 class="modal-title">How to find your UUID</h2>
         <button id="modalCloseButton" class="modal-close-button" type="button" aria-label="Close">×</button>
       </div>
       <div class="modal-body">
